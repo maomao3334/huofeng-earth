@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' blob: data:; script-src 'self' blob: 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://127.0.0.1:* http://localhost:*; worker-src 'self' blob:; connect-src 'self' blob: data: http://127.0.0.1:* http://localhost:*; font-src 'self' data:; media-src 'self' blob:;" />
+  <title>火风地球 · HuofengEarth</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%230b1118'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%236fd6b4' stroke-width='2'/%3E%3Cellipse cx='16' cy='16' rx='9' ry='4' fill='none' stroke='%234c9be8' stroke-width='2'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="vendor/cesium/Widgets/widgets.css" />
+  <script>
+    try {
+      var _uiFont = localStorage.getItem('maomaoearth.uiFont');
+      if (_uiFont) document.documentElement.setAttribute('data-ui-font', _uiFont);
+      var _uiTheme = localStorage.getItem('maomaoearth.uiTheme');
+      if (_uiTheme) document.documentElement.setAttribute('data-theme', _uiTheme);
+    } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="css/app.css" />
+  <link rel="stylesheet" href="css/tools.css?v=measure-panel-2" />
+  <script>window.CESIUM_BASE_URL = 'vendor/cesium/';</script>
+  <script src="vendor/cesium/Cesium.js"></script>
+</head>
+<body>
+  <header id="topbar">
+    <div class="brand" title="火风地球 · HuofengEarth · 本地优先运行">
+      <span class="brand-mark" aria-hidden="true">
+          <img class="brand-logo" src="assets/huofeng-symbol.svg" alt="" />
+        </span>
+      <span class="brand-text">
+        <span class="brand-name">火风地球</span>
+        <span class="brand-sub">本地三维地理工作台</span>
+      </span>
+      <span id="net-badge" class="offline-badge is-checking" title="正在检测网络状态…"
+            role="button" tabindex="0" aria-label="网络工作模式">检测中</span>
+    </div>
+
+    <div class="ops-pill" id="fire-status" title="火场态势指示（静态）：火场环境监测与辅助决策">
+      <span class="ops-dot" aria-hidden="true"></span>
+      <span class="ops-label">火场态势</span>
+      <span class="ops-value">监测中</span>
+    </div>
+
+    <div class="searchbox">
+      <input id="search-input" type="text" autocomplete="off" spellcheck="false"
+             placeholder="搜索地名 / 地标（本地索引）" aria-label="搜索地名或地标" />
+      <span id="search-badge" class="search-badge hidden" title="离线中国城市地名库">地名 --</span>
+      <div id="search-results" class="search-results hidden" role="listbox"></div>
+    </div>
+
+    <div class="top-actions">
+      <button id="btn-open" class="btn primary" title="打开数据：Shapefile / GPKG / GeoJSON / CSV / GML / GPX / DXF / WKT / KML / KMZ / FlatGeobuf / GeoTIFF / ASCII Grid（自动识别坐标系并重投影）">打开数据</button>
+      <button id="btn-open-folder" class="btn" title="打开文件夹并导入其中的全部数据（Shapefile 会自动配对 .dbf/.shx/.prj）">文件夹</button>
+      <button id="btn-import-report" class="btn" title="导入自检：查看导入结果、坐标系处理、失败原因与补救办法">导入自检</button>
+      <span class="top-sep" aria-hidden="true"></span>
+      <button id="btn-qgis" class="btn" title="分析工具箱：坡度/坡向/山体阴影/等值线/高程统计/缓冲区/质心/凸包/长度面积/沿线剖面/插值（内置原生引擎，纯离线，无需安装 QGIS）">工具箱</button>
+      <button id="btn-home" class="btn" title="回到全球视角">回到全球</button>
+      <button id="btn-perf" class="btn" title="性能模式：自动/流畅/均衡/高画质">性能：自动</button>
+      <button id="btn-2d" class="btn" title="切换 2D / 3D">2D</button>
+      <button id="btn-help" class="btn icon" title="帮助">?</button>
+    </div>
+  </header>
+
+  <div id="main">
+    <aside id="sidebar" aria-label="任务与数据面板">
+      <nav id="side-rail" aria-label="功能分类">
+        <button type="button" class="rail-btn is-active" data-cat="task" aria-pressed="true" title="任务">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8a2 2 0 0 1 2 2v14H6V6a2 2 0 0 1 2-2Z"/><path d="M9 4V2h6v2M9 9h6M9 13h6M9 17h4"/></svg>
+          <span>任务</span>
+        </button>
+        <button type="button" class="rail-btn" data-cat="data" aria-pressed="false" title="数据">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>
+          <span>数据</span>
+        </button>
+        <button type="button" class="rail-btn" data-cat="compute" aria-pressed="false" title="计算">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h11a3 3 0 1 0 0-6"/><path d="M21 16H10a3 3 0 1 0 0 6"/><path d="M3 16h4M17 8h4"/></svg>
+          <span>计算</span>
+        </button>
+        <button type="button" class="rail-btn" data-cat="tools" aria-pressed="false" title="工具">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2-2 2.3-2.3Z"/></svg>
+          <span>工具</span>
+        </button>
+        <button type="button" class="rail-btn" data-cat="layers" aria-pressed="false" title="图层">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/></svg>
+          <span>图层</span>
+        </button>
+        <button type="button" class="rail-btn" data-cat="settings" aria-pressed="false" title="设置">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+          <span>设置</span>
+        </button>
+      </nav>
+      <div id="side-panel">
+        <div id="side-panel-head">
+          <span id="side-panel-title">任务</span>
+          <span id="side-panel-hint">常用操作与成果</span>
+        </div>
+        <div id="side-quickbar" role="toolbar" aria-label="实用工具栏">
+          <button type="button" class="quick-btn" data-quick="open" title="打开数据" aria-label="打开数据">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h7l2 2h9v11H3V6Z"/><path d="M3 10h18"/></svg>
+            <span class="quick-label">打开</span>
+          </button>
+          <button type="button" class="quick-btn" data-quick="goto" title="飞到坐标" aria-label="飞到坐标">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+            <span class="quick-label">定位</span>
+          </button>
+          <button type="button" class="quick-btn" data-quick="measure" title="测距" aria-label="测距">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16 12-12 4 4L8 20H4v-4Z"/><path d="m9 11 2 2M12 8l2 2"/></svg>
+            <span class="quick-label">测距</span>
+          </button>
+          <button type="button" class="quick-btn" data-quick="draw" title="绘制线" aria-label="绘制线">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4Z"/><path d="m13 8 3 3"/></svg>
+            <span class="quick-label">绘制</span>
+          </button>
+          <button type="button" class="quick-btn" data-quick="wind" title="火场风场计算" aria-label="火场风场计算">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h11a3 3 0 1 0 0-6"/><path d="M21 16H10a3 3 0 1 0 0 6"/><path d="M3 16h4M17 8h4"/></svg>
+            <span class="quick-label">风场</span>
+          </button>
+          <button type="button" class="quick-btn" data-quick="layers" title="图层" aria-label="图层">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/></svg>
+            <span class="quick-label">图层</span>
+          </button>
+        </div>
+        <div id="side-scroll">
+      <!-- ===================== 任务 ===================== -->
+      <div class="side-group">
+        <div class="group-head"><span>任务</span></div>
+
+        <details class="side-section" id="task-tools" data-cat="task" open>
+          <summary class="sec-head"><span class="sec-title">常用工具</span></summary>
+          <div class="sec-body">
+            <button id="btn-goto" class="wide">飞到坐标…</button>
+            <div class="row2">
+              <button id="btn-measure-distance" class="wide">测距</button>
+              <button id="btn-measure-area" class="wide">测面积</button>
+            </div>
+            <div class="row2">
+              <button id="btn-measure-angle" class="wide" title="量算折线顶点处的夹角与方位角">测角度</button>
+              <button id="btn-measure-elevation" class="wide" title="量算沿线高差、累计爬升与坡度">测高差</button>
+            </div>
+            <button id="btn-clear-measure" class="wide subtle">清除测量</button>
+          </div>
+        </details>
+
+        <details class="side-section" id="draw-section" data-cat="tools">
+          <summary class="sec-head">
+            <span class="sec-title">绘制与标注</span>
+            <span id="draw-count" class="count">0</span>
+          </summary>
+          <div class="sec-body">
+            <div class="draw-modes">
+              <button id="btn-draw-point" class="wide" data-mode="point" title="绘制点（单击地图添加）">点</button>
+              <button id="btn-draw-line" class="wide" data-mode="line" title="绘制线（单击加点，双击结束）">线</button>
+              <button id="btn-draw-polygon" class="wide" data-mode="polygon" title="绘制面（单击加点，双击结束）">面</button>
+            </div>
+            <div class="draw-style">
+              <label for="draw-color">颜色</label>
+              <select id="draw-color" aria-label="绘制颜色">
+                <option value="#ffd93b">黄</option>
+                <option value="#3ea6ff">蓝</option>
+                <option value="#7ee0c0">青</option>
+                <option value="#ff6b6b">红</option>
+                <option value="#ffffff">白</option>
+              </select>
+              <label for="draw-width">线宽</label>
+              <select id="draw-width" aria-label="线宽">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+                <option value="6">6</option>
+              </select>
+            </div>
+            <div class="draw-style draw-extra">
+              <label for="draw-opacity">透明度</label>
+              <input id="draw-opacity" type="range" min="0.2" max="1" step="0.05" value="1" />
+              <label class="draw-check"><input id="draw-depthfail" type="checkbox" checked /> 遮挡虚线</label>
+              <label class="draw-check"><input id="draw-vertex-labels" type="checkbox" checked /> 顶点标签</label>
+            </div>
+            <div class="row2">
+              <button id="btn-draw-undo" class="wide subtle" title="撤销最后一个顶点/要素">撤销</button>
+              <button id="btn-draw-clear" class="wide subtle" title="清空所有绘制要素">清空</button>
+            </div>
+            <div class="row2">
+              <button id="btn-draw-export" class="wide" title="导出绘制要素为 GeoJSON">导出 GeoJSON</button>
+              <button id="btn-draw-import" class="wide" title="导入 GeoJSON 为绘制要素">导入 GeoJSON</button>
+            </div>
+            <div class="row2">
+              <button id="btn-draw-list" class="wide" title="绘制要素列表：重命名/显隐/定位/删除">要素列表…</button>
+              <button id="btn-draw-export-kml" class="wide subtle" title="导出绘制要素为 KML">导出 KML</button>
+            </div>
+            <div class="row2">
+              <button id="btn-draw-export-csv" class="wide subtle" title="导出绘制要素为 CSV">导出 CSV</button>
+              <button id="btn-draw-stop" class="wide subtle" disabled title="结束当前绘制（等同双击）">结束绘制</button>
+              <button id="btn-profile" class="wide" title="对最后一条绘制线/测量线生成高程剖面">高程剖面</button>
+            </div>
+          </div>
+        </details>
+
+        <details class="side-section" id="topology-section" data-cat="tools">
+          <summary class="sec-head">
+            <span class="sec-title">拓扑检查</span>
+            <span id="topology-count" class="count">0</span>
+          </summary>
+          <div class="sec-body">
+            <button id="btn-topology" class="wide" title="检查并修复自相交、重叠、缝隙、交点未打断等拓扑问题">拓扑检查与修复…</button>
+            <p class="side-note">
+              查<strong>自相交</strong>、<strong>面重叠</strong>、<strong>缝隙</strong>、
+              <strong>交点未打断</strong>等拓扑问题，一键修复并另存为新图层。
+              对应 QGIS 的拓扑检查器与修复几何。纯离线。
+            </p>
+          </div>
+        </details>
+
+        <details class="side-section" id="network-section" data-cat="tools">
+          <summary class="sec-head">
+            <span class="sec-title">网络分析</span>
+            <span id="network-count" class="count">0</span>
+          </summary>
+          <div class="sec-body">
+            <button id="btn-network" class="wide" title="在线要素组成的路网上算最短路径与等距服务区">网络分析（最短路 / 服务区）…</button>
+            <p class="side-note">
+              线要素自动打断成<strong>路网</strong>，算<strong>最短路径</strong>与
+              <strong>等距服务区</strong>，单行道按属性识别。
+              对应 QGIS 的网络分析库与 GRASS v.net。纯离线。
+            </p>
+          </div>
+        </details>
+
+        <details class="side-section" id="plugin-section" data-cat="tools">
+          <summary class="sec-head">
+            <span class="sec-title">插件</span>
+            <span id="plugin-count" class="count">0</span>
+          </summary>
+          <div class="sec-body">
+            <button id="btn-plugin" class="wide" title="安装自己的算法插件：纯 JavaScript 沙箱，零外部进程">插件管理（安装 / 新建 / 导出）…</button>
+            <p class="side-note">
+              不用改源码就能<strong>加自己的算法</strong>：写一段 JavaScript，
+              装上就能在<strong>工具箱</strong>里和原生算法一起用。
+              能读全国 DEM 与矢量，碰不到网络与文件系统，纯离线。
+            </p>
+          </div>
+        </details>
+
+        <details class="side-section" id="spatial-section" data-cat="tools">
+          <summary class="sec-head">
+            <span class="sec-title">空间查询</span>
+            <span id="spatial-count" class="count">0</span>
+          </summary>
+          <div class="sec-body">
+            <button id="btn-spatial" class="wide" title="按位置选择要素：在圆内 / 多边形内选要素，对应 QGIS 的 select by location">按位置选择要素…</button>
+            <p class="side-note">
+              在<strong>圆</strong>或<strong>多边形</strong>范围内选要素：
+              相交 / 完全包含 / 中心点在内，对应 QGIS 的「按位置选择」。
+              内部建<strong>空间索引</strong>，要素再多也不卡。纯离线。
+            </p>
+          </div>
+        </details>
+
+        <details class="side-section" id="vectorwrite-section" data-cat="data">
+          <summary class="sec-head">
+            <span class="sec-title">矢量格式写出</span>
+            <span id="vectorwrite-count" class="count">0</span>
+          </summary>
+          <div class="sec-body">
+            <button id="btn-vector-write" class="wide" title="把绘制要素或矢量图层另存为 Shapefile / GPKG / GeoJSON / CSV / KML">矢量格式写出…</button>
+            <p class="side-note">
+              对应 QGIS 的「<strong>另存为</strong>」：<strong>Shapefile</strong>（打包 .zip）、
+              <strong>GPKG</strong>、<strong>GeoJSON</strong>、<strong>CSV</strong>、<strong>KML</strong>，
+              可重投影到 CGCS2000 / Web 墨卡托等坐标系。浏览器内生成，纯离线。
+            </p>
+          </div>
+        </details>
+
+        <details class="side-section" id="model3d-section" data-cat="tools">
+          <summary class="sec-head">
+            <span class="sec-title">三维模型与建筑体块</span>
+            <span id="model3d-count" class="count">0</span>
+          </summary>
+          <div class="sec-body">
+            <button id="btn-models3d" class="wide" title="导入 glTF/GLB/OBJ/STL/3D Tiles，或按矢量面生成建筑体块">打开三维模型面板…</button>
+            <p class="side-note">模型导入：glTF / GLB / OBJ / STL / 3D Tiles，OBJ 与 STL 在浏览器里转 glTF，全程离线。建筑体块：把带高度的房屋轮廓面拉伸成三维体块。</p>
+          </div>
+        </details>
+
+        <details class="side-section" id="tiles3d-section" data-cat="data">
+          <summary class="sec-head">
+            <span class="sec-title">三维倾斜摄影</span>
+            <span id="tiles3d-count" class="count">0</span>
+          </summary>
+          <div class="sec-body">
+            <button id="btn-tiles3d" class="wide" title="选择本机 3D Tiles 倾斜摄影目录并流式加载（b3dm / glb / pnts / cmpt）">添加倾斜摄影目录…</button>
+            <p class="side-note">
+              选择含 <code>tileset.json</code> 的本机目录，软件会以只读方式挂载并分块流式渲染，
+              全程离线、不复制数据。<code>.osgb</code> / <code>.3DML</code> / <code>.slpk</code>
+              需先转成 3D Tiles。
+            </p>
+          </div>
+        </details>
+
+        <details class="side-section" id="timeline-section" data-cat="data">
+          <summary class="sec-head">
+            <span class="sec-title">时间轴 / 历史影像</span>
+            <span id="timeline-count" class="count">0</span>
+          </summary>
+          <div class="sec-body">
+            <button id="btn-timeline" class="wide" title="扫描本机带日期的影像，生成可拖动的时间轴（历史影像回放）">历史影像时间轴…</button>
+            <p class="side-note">
+              扫描本地影像与数据仓库里带拍摄日期的数据集，生成可拖动的时间轴。
+              拖动滑块切换期次，太阳位置与阴影同步到该期拍摄时刻。全程离线。
+            </p>
+          </div>
+        </details>
+
+        <details class="side-section" id="rasterclassify-section" data-cat="data">
+          <summary class="sec-head">
+            <span class="sec-title">栅格分类</span>
+            <span id="rasterclassify-count" class="count">0</span>
+          </summary>
+          <div class="sec-body">
+            <button id="btn-raster-classify" class="wide" title="用训练样本点做最小距离 / 最大似然监督分类，或用 K-Means 非监督聚类">栅格分类（监督 / 非监督）…</button>
+            <p class="side-note">
+              在地图上点几个<strong>训练样本</strong>，按最小距离或最大似然把整幅栅格分成若干类，
+              并给出<strong>混淆矩阵</strong>与总体精度；没有样本时可用 K-Means 先做非监督聚类。
+              浏览器内完成，纯离线，不依赖 QGIS / GDAL。
+            </p>
+          </div>
+        </details>
+
+        <details class="side-section" id="netcdf-section" data-cat="data">
+          <summary class="sec-head">
+            <span class="sec-title">NetCDF 气象叠加</span>
+            <span id="netcdf-count" class="count">0</span>
+          </summary>
+          <div class="sec-body">
+            <button id="btn-netcdf" class="wide" title="打开 .nc 气象文件，按高度层叠加风/温/压场">气象栅格叠加…</button>
+            <p class="side-note">
+              读取 <strong>NetCDF</strong>（.nc）里的风、温度、气压、湿度场，
+              按<strong>时刻</strong>与<strong>高度层</strong>分层叠加到地球上，
+              可再叠风向箭头。浏览器内直接解析，纯离线。
+            </p>
+          </div>
+        </details>
+
+        <details class="side-section" id="tour-section" data-cat="tools">
+          <summary class="sec-head">
+            <span class="sec-title">Tour 电影运镜</span>
+            <span id="tour-count" class="count">0</span>
+          </summary>
+          <div class="sec-body">
+            <button id="btn-tour" class="wide" title="录制关键帧、播放电影式运镜、导出零依赖 HTML 播放器">Tour 运镜…</button>
+            <p class="side-note">
+              把当前视角录成关键帧，飞到各处依次记录，播放即成电影运镜。
+              航线可存成可读 JSON，也能导出<strong>零依赖单文件 HTML</strong>播放器，
+              拷到任何电脑离线播放。
+            </p>
+          </div>
+        </details>
+
+        <details class="side-section" id="marker-section" data-cat="tools">
+          <summary class="sec-head">
+            <span class="sec-title">坐标标点</span>
+            <span id="marker-count" class="count">0</span>
+          </summary>
+          <div class="sec-body">
+            <button id="btn-marker-add" class="wide" title="输入经纬度/度分秒并标记点">坐标标点…</button>
+            <button id="btn-marker-list" class="wide" title="查看、编辑、导入导出标记点">标记点列表…</button>
+          </div>
+        </details>
+
+        <details class="side-section" id="snapshot-section" data-cat="task">
+          <summary class="sec-head"><span class="sec-title">快照 / 分享</span></summary>
+          <div class="sec-body">
+            <div class="row2">
+              <button id="btn-snapshot-html" class="wide" title="导出单文件 HTML 快照（内嵌截图 / 相机 / 图层 / 数据来源与版权）">HTML 快照</button>
+              <button id="btn-share-link" class="wide" title="复制含 cam / exag / terrain / imagery / windninja / perf 的分享链接">复制分享链接</button>
+            </div>
+            <button id="btn-snapshot-preview" class="wide subtle" title="在新标签页打开 HTML 快照预览">预览快照</button>
+            <p class="side-note">快照为单文件 HTML（截图与信息全部内嵌），离线可打开、无外部请求；分享链接可在本机恢复同一视角、地形/影像与 Wind3D 风场。</p>
+          </div>
+        </details>
+      </div>
+
+      <!-- ===================== 数据 ===================== -->
+      <div class="side-group">
+        <div class="group-head"><span>数据</span></div>
+
+        <details class="side-section" id="data-public" data-cat="data">
+          <summary class="sec-head"><span class="sec-title">公开数据（已内置·离线）</span></summary>
+          <div class="sec-body">
+            <div class="row2">
+              <button id="btn-pub-admin0" class="wide">详细国界</button>
+              <button id="btn-pub-rivers" class="wide">河流</button>
+            </div>
+            <div class="row2">
+              <button id="btn-pub-lakes" class="wide">湖泊</button>
+              <button id="btn-pub-places" class="wide">城市</button>
+            </div>
+            <button id="btn-pub-dem" class="wide">示例区地形阴影</button>
+            <button id="btn-terrain" class="wide">3D 地形（开/关）</button>
+            <div class="terrain-exag" title="地形高度夸张倍数（仅影响显示，不用于量测）">
+              <label for="terrain-exaggeration">地形夸张</label>
+              <input id="terrain-exaggeration" type="range" min="1" max="3" step="0.1" value="1"
+                     aria-label="地形夸张倍数" />
+              <span id="terrain-exaggeration-value" class="value">1.0×</span>
+              <button id="terrain-exaggeration-reset" class="exag-reset" type="button" title="重置为 1.0×（快捷键 1）">重置</button>
+            </div>
+            <button id="btn-imagery" class="wide">卫星影像（开）</button>
+          </div>
+        </details>
+
+        <details class="side-section" id="local-imagery-section" data-cat="data" hidden>
+          <summary class="sec-head">
+            <span class="sec-title">本地影像</span>
+            <span id="local-imagery-count" class="count">0</span>
+          </summary>
+          <div class="sec-body">
+            <div id="local-imagery-list" class="local-imagery-list"></div>
+            <p class="side-note" id="local-imagery-note">仅本机使用：<code>data/local/</code> 下的影像不会进入 Git 或发布包。</p>
+          </div>
+        </details>
+
+        <details class="side-section" id="vault-section" data-cat="data">
+          <summary class="sec-head">
+            <span class="sec-title">数据仓库</span>
+            <span id="vault-count" class="count">0</span>
+          </summary>
+          <div class="sec-body">
+            <div class="row2">
+              <button id="btn-vault-import" class="wide" title="选择本地数据文件并入库（影像 / DEM / 矢量，格式不限）">导入数据…</button>
+              <button id="btn-vault-refresh" class="wide subtle" title="刷新仓库清单">刷新</button>
+            </div>
+            <p id="vault-progress" class="side-note" hidden></p>
+            <div id="vault-batch" class="vault-batch" hidden>
+              <div class="vault-batch-bar">
+                <label class="vault-check-all" title="勾选 / 取消勾选全部数据集">
+                  <input type="checkbox" id="vault-select-all">
+                  <span>全选</span>
+                </label>
+                <span id="vault-selected" class="vault-batch-count">已选 0 项</span>
+              </div>
+              <div class="vault-batch-bar">
+                <input type="text" id="vault-rename-tpl" class="vault-tpl"
+                       placeholder="命名模板：{name}_正射 / 图层{n}"
+                       title="占位符：{n} 序号（从 1 起）、{name} 原名、{id} 原 ID">
+                <button id="btn-vault-batch-rename" class="vault-mini" title="按模板批量重命名所选数据集">批量改名</button>
+              </div>
+              <div class="vault-batch-bar">
+                <button id="btn-vault-batch-delete" class="vault-mini danger" title="删除所选数据集及磁盘上的瓦片">批量删除</button>
+                <button id="btn-vault-export" class="vault-mini" title="把入库清单导出为 CSV，供归档留存">导出清单 CSV</button>
+              </div>
+            </div>
+            <div id="vault-list" class="vault-list"></div>
+            <p class="side-note">
+              纯离线入库：格式不限（GeoTIFF / TIFF / ASC / HGT / 裸二进制 / PGM-PPM…），
+              影像自动切 XYZ 瓦片，DEM 自动建 int16 金字塔；
+              定位支持 <code>.prj</code> 投影定义与国产卫星 <code>.rpb</code> RPC。
+            </p>
+          </div>
+        </details>
+
+        <details class="side-section" id="data-section" data-cat="data">
+          <summary class="sec-head">
+            <span class="sec-title">数据状态</span>
+            <span id="data-state" class="count">--</span>
+          </summary>
+          <div class="sec-body">
+            <ul id="data-status" class="data-status">
+              <li class="data-row">正在读取本地数据状态…</li>
+            </ul>
+            <div class="row2">
+              <button id="btn-data-terrain" class="wide" title="开启/确保 3D 地形">3D 地形</button>
+              <button id="btn-data-imagery" class="wide" title="开启/确保卫星影像">卫星影像</button>
+            </div>
+            <div class="row2">
+              <button id="btn-data-vectors" class="wide" title="一键加载未加载的本地矢量（国界/河流/湖泊/城市）">加载矢量</button>
+              <button id="btn-data-refresh" class="wide subtle" title="刷新数据状态">刷新状态</button>
+            </div>
+            <button id="btn-xyz-dir" class="wide" title="选择本地 XYZ 瓦片目录（…/z/x/y.png|jpg）">本地 XYZ 瓦片目录</button>
+            <button id="btn-mbtiles" class="wide" title="加载本地 MBTiles（需先用 MaoMaoEarth.exe mbtiles 启动瓦片服务）">加载 MBTiles…</button>
+            <p class="side-note">MBTiles：运行 <code>MaoMaoEarth.exe mbtiles 文件.mbtiles</code> 后会自动打开；也可手动填服务地址。COG / GeoTIFF 用「打开数据」导入。</p>
+          </div>
+        </details>
+
+        <details class="side-section" id="lighting-section" data-cat="data">
+          <summary class="sec-head">
+            <span class="sec-title">实时光照</span>
+            <span id="lighting-state" class="count">关</span>
+          </summary>
+          <div class="sec-body">
+            <div class="row2">
+              <button id="lighting-toggle" class="wide" title="开启/关闭太阳光照">开启光照</button>
+              <button id="lighting-reset" class="wide subtle" title="关闭光照，时间恢复 12:00 UTC">重置</button>
+            </div>
+            <div class="lighting-time">
+              <label for="lighting-time">时间</label>
+              <input id="lighting-time" type="range" min="0" max="24" step="0.25" value="12"
+                     aria-label="一天中的时间（小时，UTC）" />
+              <span id="lighting-time-value" class="value">12:00</span>
+            </div>
+            <div class="lighting-meta">
+              <span id="lighting-utc">UTC 12:00</span>
+              <span id="lighting-local">本地 --:--</span>
+              <span id="lighting-sun">方位 -- · 高度 --</span>
+            </div>
+            <label class="lighting-enhance" title="降低影像层透明度，让本地地形阴影（hillshade）更明显">
+              <input id="lighting-shadow-enhance" type="checkbox" />
+              阴影增强（需 3D 地形）
+            </label>
+            <div class="row2">
+              <button id="gep-mode-toggle" class="wide" title="切换到 GEP 模式：烘焙影像（卫星 × 晕渲 乘法合成）+ 关闭顶点光照">GEP 模式：关</button>
+              <span id="gep-mode-state" class="count">关</span>
+            </div>
+            <p class="side-note" id="lighting-note">CustomHeightmap 地形无顶点法线：仅昼夜明暗，无地形起伏阴影。</p>
+          </div>
+        </details>
+      </div>
+
+      <!-- ===================== 计算 ===================== -->
+      <div class="side-group">
+        <div class="group-head"><span>计算</span></div>
+
+        <!-- 火场风场计算（手动背景风，无需观测数据） -->
+        <details class="side-section" id="wind3d-compute-section" data-cat="compute" open>
+          <summary class="sec-head">
+            <span class="sec-title">火场风场计算</span>
+            <span id="w3d-state" class="count is-idle">待机</span>
+          </summary>
+          <div class="sec-body">
+            <div class="w3d-focus-bar">
+              <span>火场风场工作区</span>
+              <button id="w3d-focus-close" class="btn-mini" type="button" title="收起工作区，回到地球主界面">收起</button>
+            </div>
+            <label class="fld w3d-wide" for="w3d-mode">
+              <span class="fld-l">Wind3D 模式</span>
+              <select id="w3d-mode" aria-label="Wind3D 计算模式">
+                <option value="stations">常规风场（观测 + 地形）</option>
+                <option value="turbulence" selected>湍流 RANS</option>
+                <option value="assimilation">逐站观测同化</option>
+                <option value="native-assimilation">原生 RANS 耦合同化</option>
+              </select>
+            </label>
+            <p id="w3d-mode-note" class="side-note w3d-intro">湍流 RANS：手动背景风无需观测；逐站剖面需要 WindMaster + UAV 资料。</p>
+
+            <div class="row2 w3d-run-row">
+              <button id="w3d-view" class="wide" type="button" title="把当前视图范围填入南/西/北/东">取当前视图范围</button>
+              <button id="w3d-run" class="wide primary" type="button" title="按当前模式和参数开始计算火场低空风场">开始计算</button>
+            </div>
+
+            <div class="w3d-fields">
+              <label class="fld" for="w3d-south">
+                <span class="fld-l">南界 °</span>
+                <input id="w3d-south" type="number" step="0.0001" inputmode="decimal" placeholder="25.0180" aria-label="南界纬度" />
+              </label>
+              <label class="fld" for="w3d-west">
+                <span class="fld-l">西界 °</span>
+                <input id="w3d-west" type="number" step="0.0001" inputmode="decimal" placeholder="102.3490" aria-label="西界经度" />
+              </label>
+              <label class="fld" for="w3d-north">
+                <span class="fld-l">北界 °</span>
+                <input id="w3d-north" type="number" step="0.0001" inputmode="decimal" placeholder="25.0710" aria-label="北界纬度" />
+              </label>
+              <label class="fld" for="w3d-east">
+                <span class="fld-l">东界 °</span>
+                <input id="w3d-east" type="number" step="0.0001" inputmode="decimal" placeholder="102.4510" aria-label="东界经度" />
+              </label>
+            </div>
+
+            <div class="w3d-dem-row">
+              <label class="fld" for="w3d-dem">
+                <span class="fld-l">DEM（GeoTIFF）</span>
+                <input id="w3d-dem" type="text" spellcheck="false" autocomplete="off" placeholder="选择本地 .tif 文件" aria-label="DEM 文件路径" />
+              </label>
+              <button id="w3d-pick" class="btn-mini" type="button" title="浏览本地 DEM 文件">浏览…</button>
+            </div>
+
+            <div class="w3d-dem-row" id="w3d-input-row">
+              <label class="fld" for="w3d-input-dir">
+                <span class="fld-l">观测数据目录</span>
+                <input id="w3d-input-dir" type="text" spellcheck="false" autocomplete="off" placeholder="含 WindMaster / DAT / UAV / 站点 CSV" aria-label="Wind3D 观测数据目录" />
+              </label>
+              <button id="w3d-pick-input" class="btn-mini" type="button" title="浏览观测数据目录">浏览…</button>
+            </div>
+
+            <div class="w3d-dem-row" id="w3d-station-row">
+              <label class="fld" for="w3d-station-csv">
+                <span class="fld-l">固定站 CSV（可选）</span>
+                <input id="w3d-station-csv" type="text" spellcheck="false" autocomplete="off" placeholder="逐站/原生同化的固定站 CSV" aria-label="固定站观测 CSV" />
+              </label>
+              <button id="w3d-pick-csv" class="btn-mini" type="button" title="浏览固定站 CSV">浏览…</button>
+            </div>
+
+            <label class="fld w3d-wide" id="w3d-turb-row" for="w3d-turb-source">
+              <span class="fld-l">湍流背景来源</span>
+              <select id="w3d-turb-source" aria-label="湍流背景来源">
+                <option value="manual">手动背景风（无需观测）</option>
+                <option value="stations">逐站剖面（WindMaster + UAV）</option>
+              </select>
+            </label>
+
+            <div class="w3d-fields" id="w3d-bg-fields">
+              <label class="fld" for="w3d-speed">
+                <span class="fld-l">背景风速 m/s</span>
+                <input id="w3d-speed" type="number" step="0.1" min="0.1" value="8" inputmode="decimal" aria-label="背景风速（米每秒）" />
+              </label>
+              <label class="fld" for="w3d-direction">
+                <span class="fld-l">背景风向 °</span>
+                <input id="w3d-direction" type="number" step="1" min="0" max="359" value="270" inputmode="numeric" aria-label="背景风向（度，来向）" />
+              </label>
+              <label class="fld" for="w3d-bgheight">
+                <span class="fld-l">背景高度 m</span>
+                <input id="w3d-bgheight" type="number" step="10" min="1" value="50" inputmode="numeric" aria-label="背景风高度（米）" />
+              </label>
+            </div>
+
+            <label class="fld w3d-wide" for="w3d-resolution">
+              <span class="fld-l">网格分辨率 m</span>
+              <input id="w3d-resolution" type="number" step="10" min="1" value="200" inputmode="numeric" aria-label="网格分辨率（米）" />
+            </label>
+
+            <label class="fld w3d-wide" id="w3d-uav-row" for="w3d-uav-height">
+              <span class="fld-l">UAV 高度定义</span>
+              <select id="w3d-uav-height" aria-label="UAV 高度定义">
+                <option value="gps_altitude_minus_dem" selected>GPS 海拔 − 当前 DEM</option>
+                <option value="relative_to_launch">相对起飞点高度</option>
+                <option value="relative_agl">已确认的相对 AGL</option>
+                <option value="gps_plus_relative_minus_dem">旧字段：GPS 起飞海拔 + 相对高度 − DEM</option>
+                <option value="unknown">未知（研究模式会拒绝运行）</option>
+              </select>
+            </label>
+
+            <div class="w3d-time-scan-head">
+              <span>模拟时间扫描</span>
+              <span id="w3d-time-span" class="w3d-time-span">开始 / 结束</span>
+            </div>
+            <div class="w3d-fields">
+              <label class="fld w3d-time-field" for="w3d-start-time">
+                <span class="fld-l">开始时间</span>
+                <input id="w3d-start-time" type="datetime-local" step="60" aria-label="模拟开始时间" />
+              </label>
+              <label class="fld w3d-time-field" for="w3d-end-time">
+                <span class="fld-l">结束时间</span>
+                <input id="w3d-end-time" type="datetime-local" step="60" aria-label="模拟结束时间" />
+              </label>
+              <label class="fld w3d-timezone-field" for="w3d-timezone">
+                <span class="fld-l">时区</span>
+                <select id="w3d-timezone" aria-label="模拟时间时区">
+                  <option value="+08:00" selected>中国标准时间 +08:00</option>
+                  <option value="Z">UTC</option>
+                  <option value="+09:00">+09:00</option>
+                  <option value="+00:00">+00:00</option>
+                  <option value="-05:00">-05:00</option>
+                </select>
+              </label>
+            </div>
+            <div class="row2">
+              <button id="w3d-time-now" class="wide subtle" type="button" title="开始时间设为当前时间，结束时间设为 1 小时后">使用当前时间</button>
+              <button id="w3d-time-clear" class="wide subtle" type="button" title="结束时间留空时按单时刻计算">结束=开始</button>
+            </div>
+
+            <label class="fld w3d-wide" for="w3d-heights">
+              <span class="fld-l">输出高度 m（空格分隔，如 50 或 50 100）</span>
+              <input id="w3d-heights" type="text" spellcheck="false" autocomplete="off" value="50" placeholder="50" aria-label="输出高度列表（米）" />
+            </label>
+
+            <details class="w3d-advanced" id="w3d-advanced">
+              <summary>高级设置</summary>
+              <div class="sec-body">
+                <div class="w3d-fields">
+                  <label class="fld" for="w3d-reference-height"><span class="fld-l">参考高度 m</span><input id="w3d-reference-height" type="number" step="1" min="1" value="50" /></label>
+                  <label class="fld" for="w3d-roughness"><span class="fld-l">粗糙度 m</span><input id="w3d-roughness" type="number" step="0.01" min="0.01" value="0.1" /></label>
+                  <label class="fld" for="w3d-displacement"><span class="fld-l">位移高度 m</span><input id="w3d-displacement" type="number" step="0.1" min="0" value="0" /></label>
+                  <label class="fld" for="w3d-canopy"><span class="fld-l">冠层高度 m</span><input id="w3d-canopy" type="number" step="0.1" min="0" value="0" /></label>
+                  <label class="fld" for="w3d-buffer"><span class="fld-l">范围外扩 km</span><input id="w3d-buffer" type="number" step="1" min="0" value="10" /></label>
+                  <label class="fld" for="w3d-max-cases"><span class="fld-l">最大算例</span><input id="w3d-max-cases" type="number" step="1" min="1" value="1" /></label>
+                </div>
+                <div class="w3d-fields">
+                  <label class="fld" for="w3d-windmaster-height"><span class="fld-l">WindMaster 高度</span><select id="w3d-windmaster-height"><option value="agl" selected>AGL</option><option value="platform_vertical_offset">平台垂直偏移</option><option value="unknown">未知</option></select></label>
+                  <label class="fld" for="w3d-windmaster-agl"><span class="fld-l">平台 AGL m</span><input id="w3d-windmaster-agl" type="number" step="0.1" min="0" value="0" /></label>
+                </div>
+                <label class="fld w3d-wide" for="w3d-uav-direction"><span class="fld-l">UAV 风向定义</span><select id="w3d-uav-direction"><option value="from_true_north" selected>真北来向</option><option value="to_true_north">真北去向</option></select></label>
+                <div class="w3d-fields">
+                  <label class="fld" for="w3d-assim-hscale"><span class="fld-l">同化水平尺度 m</span><input id="w3d-assim-hscale" type="number" step="10" min="1" value="1000" /></label>
+                  <label class="fld" for="w3d-assim-bgsigma"><span class="fld-l">背景风 σ m/s</span><input id="w3d-assim-bgsigma" type="number" step="0.1" min="0.1" value="2" /></label>
+                  <label class="fld" for="w3d-assim-obssigma"><span class="fld-l">观测风 σ m/s</span><input id="w3d-assim-obssigma" type="number" step="0.1" min="0.1" value="0.5" /></label>
+                  <label class="fld" for="w3d-assim-vscale"><span class="fld-l">同化垂直尺度 m</span><input id="w3d-assim-vscale" type="number" step="1" min="1" value="30" /></label>
+                </div>
+                <div class="w3d-fields">
+                  <label class="fld" for="w3d-native-hradius"><span class="fld-l">原生水平半径 m</span><input id="w3d-native-hradius" type="number" step="10" min="1" value="300" /></label>
+                  <label class="fld" for="w3d-native-vradius"><span class="fld-l">原生垂直半径 m</span><input id="w3d-native-vradius" type="number" step="1" min="1" value="50" /></label>
+                  <label class="fld" for="w3d-native-iterations"><span class="fld-l">原生最大迭代</span><input id="w3d-native-iterations" type="number" step="10" min="51" value="1000" /></label>
+                  <label class="fld" for="w3d-native-tolerance"><span class="fld-l">残差容差</span><input id="w3d-native-tolerance" type="number" step="0.00001" min="0.00001" value="0.00001" /></label>
+                </div>
+                <label class="draw-check"><input id="w3d-kmz" type="checkbox" checked /> 生成 KMZ</label>
+              </div>
+            </details>
+
+            <details class="w3d-help" id="w3d-help">
+              <summary>使用方法 / 需要准备什么</summary>
+              <div class="sec-body"><p id="w3d-help-text" class="side-note">选择模式后，这里会给出所需数据和操作步骤。</p></div>
+            </details>
+
+            <div class="w3d-actions">
+              <button id="w3d-cancel" class="wide subtle" type="button" disabled title="取消正在进行的计算任务">取消任务</button>
+              <button id="w3d-clear-log" class="wide subtle" type="button" title="清空下方运行日志">清空日志</button>
+            </div>
+
+            <pre id="w3d-log" class="w3d-log" tabindex="0" aria-live="polite" aria-label="火场风场计算日志">就绪：等待计算任务。</pre>
+          </div>
+        </details>
+
+        <details class="side-section" id="windninja-section" data-cat="compute" open>
+          <summary class="sec-head"><span class="sec-title">Wind3D / 工程 / 导出</span></summary>
+          <div class="sec-body">
+            <div class="row2">
+              <button id="btn-windninja" class="wide" title="选择 WindNinja 结果文件夹（windninja/&lt;时间&gt;/h050m/r0200m/）">Wind3D 目录</button>
+              <button id="btn-wn-clear" class="wide subtle" title="清除当前风场">清除风场</button>
+            </div>
+            <div id="wn-scene-row" class="wn-scene-row hidden">
+              <button id="wn-prev" type="button" title="上一场景">◀</button>
+              <select id="wn-scene-select" aria-label="Wind3D 场景"></select>
+              <button id="wn-play" type="button" class="wn-play" title="自动播放场景">▶</button>
+              <button id="wn-next" type="button" title="下一场景">▶</button>
+            </div>
+            <div class="wind-mode-row" id="wind-mode-row" role="group" aria-label="风场显示模式">
+              <button type="button" class="wind-mode-btn" data-windmode="particles" title="仅显示风场粒子动画">粒子</button>
+              <button type="button" class="wind-mode-btn tool-active" data-windmode="arrows" title="仅显示 Wind3D 箭头">箭头</button>
+              <button type="button" class="wind-mode-btn" data-windmode="both" title="同时显示粒子和箭头">两者</button>
+            </div>
+            <div class="particle-row">
+              <select id="particle-density" aria-label="粒子密度">
+                <option value="low">低 600</option>
+                <option value="medium" selected>中 1200</option>
+                <option value="high">高 2200</option>
+              </select>
+              <button id="btn-particle-play" type="button" title="开始/停止风场粒子动画">播放粒子</button>
+              <button id="btn-wind-profile" type="button" title="垂直风廓线：多高度场景点选与 3D 高度切片">风廓线</button>
+            </div>
+            <p class="side-note" id="particle-note">粒子：等待 Wind3D 风场数据…</p>
+            <div class="row2">
+              <button id="btn-project-save" class="wide" title="保存为 .leproj 工程文件">保存工程</button>
+              <button id="btn-project-open" class="wide" title="打开 .leproj 工程文件">打开工程</button>
+            </div>
+            <div class="row2 export-row">
+              <button id="btn-export-png" class="wide" title="导出当前视图为 PNG（含标题/图例）">导出 PNG</button>
+              <button id="btn-export-pdf" class="wide" title="打开打印窗口，可另存为 PDF">导出 PDF</button>
+              <button id="btn-export-geojson" class="wide" title="导出当前 Wind3D 采样点为 GeoJSON">GeoJSON</button>
+              <button id="btn-export-kmz" class="wide" title="导出当前风场为 KMZ（含图例）">KMZ</button>
+            </div>
+          </div>
+        </details>
+
+        <details class="side-section" id="ui-settings-section" data-cat="settings" open>
+          <summary class="sec-head"><span class="sec-title">界面显示</span></summary>
+          <div class="sec-body">
+            <label class="fld w3d-wide" for="ui-theme">
+              <span class="fld-l">界面主题</span>
+              <select id="ui-theme" aria-label="界面主题">
+                <option value="dark" selected>暗色 · 指挥</option>
+                <option value="light">亮色 · 消防红蓝</option>
+              </select>
+            </label>
+            <label class="fld w3d-wide" for="ui-font-size">
+              <span class="fld-l">字体大小</span>
+              <select id="ui-font-size" aria-label="界面字体大小">
+                <option value="small">小（90%）</option>
+                <option value="normal" selected>标准（100%）</option>
+                <option value="large">大（112%）</option>
+                <option value="xlarge">特大（124%）</option>
+              </select>
+            </label>
+            <p class="side-note">调整侧栏、顶栏和弹窗文字大小；地图渲染不受影响。</p>
+          </div>
+        </details>
+
+        <details class="side-section" id="diag-section" data-cat="settings">
+          <summary class="sec-head"><span class="sec-title">应用诊断</span></summary>
+          <div class="sec-body">
+            <button id="btn-diagnostics" class="wide" title="GPU / WebGL / FPS / 内存 / 图层 / 地形 / 错误日志">打开诊断面板</button>
+            <p class="side-note">GPU · WebGL · FPS · 内存 · 图层 · 地形 · renderError / console.error</p>
+          </div>
+        </details>
+      </div>
+
+      <!-- ===================== 图层 ===================== -->
+      <div class="side-group">
+        <div class="group-head"><span>图层</span></div>
+        <details class="side-section grow" id="layers-section" data-cat="layers" open>
+          <summary class="sec-head">
+            <span class="sec-title">图层</span>
+            <span id="layer-count" class="count">0</span>
+            <button type="button" id="btn-layer-group" class="sec-action" title="新建图层分组（QGIS 式分组管理）">分组+</button>
+          </summary>
+          <div class="sec-body">
+            <input id="layer-search" class="layer-search" type="search" autocomplete="off" spellcheck="false"
+                   placeholder="搜索图层…" aria-label="搜索图层" />
+            <div id="layer-summary" class="layer-summary">共 0 层</div>
+            <ul id="layer-list" class="layer-list">
+              <li class="layer-empty">暂无图层，拖放文件或点击“打开数据”</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+
+      <p class="side-foot">把 <b>KML / KMZ / GeoJSON / GeoTIFF</b> 直接拖到地球上即可加载；数据全部在本机读取。</p>
+      <div class="side-emblem" aria-hidden="true">
+        <img src="assets/huofeng-symbol.svg" alt="" />
+        <div><b>火风地球</b><span>三维地形 · 风场 · 空间分析</span></div>
+      </div>
+      <p class="side-motto">对党忠诚 · 纪律严明 · 赴汤蹈火 · 竭诚为民</p>
+        </div>
+      </div>
+    </aside>
+
+    <div id="map-hud" aria-hidden="true">
+      <span class="hud-corner tl"></span><span class="hud-corner tr"></span>
+      <span class="hud-corner bl"></span><span class="hud-corner br"></span>
+      <div class="hud-stamp">
+        <img src="assets/huofeng-symbol.svg" alt="" />
+        <div><b>火风地球</b><span>三维地形 · 风场 · 空间分析</span></div>
+      </div>
+    </div>
+    <div id="viewer" aria-label="三维地球视图"></div>
+
+    <!-- KML/KMZ 动画时间轴（由 js/kml-native.js 提供控制器，js/ui.js 绑定） -->
+    <div id="kml-timeline" class="kml-timeline hidden" role="group" aria-label="KML 时间轴">
+      <button id="kml-tl-play" type="button" class="tl-play" title="播放 / 暂停">▶</button>
+      <span id="kml-tl-label" class="tl-label">--</span>
+      <input id="kml-tl-range" class="tl-range" type="range" min="0" max="0" step="1" value="0"
+             aria-label="时间帧" />
+      <span id="kml-tl-count" class="tl-count">0 / 0</span>
+    </div>
+
+    <!-- 类似 Google Earth 的视角控制：旋转 / 俯仰 / 缩放 / 复位正北 -->
+    <div id="nav-controls" class="nav-controls" role="group" aria-label="视角控制">
+      <button id="nav-rotate-left" type="button" title="向左旋转视图">⟲</button>
+      <button id="nav-rotate-right" type="button" title="向右旋转视图">⟳</button>
+      <button id="nav-tilt-up" type="button" title="俯仰向上（更接近平视）">▲</button>
+      <button id="nav-tilt-down" type="button" title="俯仰向下（更接近俯视）">▼</button>
+      <button id="nav-zoom-in" type="button" title="放大">＋</button>
+      <button id="nav-zoom-out" type="button" title="缩小">－</button>
+      <button id="nav-reset" type="button" class="nav-reset" title="复位正北（保持位置，回正北俯视）">北</button>
+    </div>
+
+    <!-- 绘制提示（绘制模式下显示） -->
+    <div id="draw-hud" class="draw-hud hidden" role="status"></div>
+
+    <!-- 诊断面板 -->
+    <div id="diag-panel" class="le-panel diag-panel hidden" role="dialog" aria-modal="false" aria-label="应用诊断面板">
+      <div class="le-panel-head">
+        <h4>应用诊断 <span id="diag-badge" class="le-badge">FPS --</span></h4>
+        <div class="le-panel-actions">
+          <button id="diag-copy" type="button" title="复制诊断 JSON 到剪贴板">复制 JSON</button>
+          <button id="diag-download" type="button" title="下载诊断日志（JSON）">下载日志</button>
+          <button id="diag-refresh" type="button" title="刷新数据">刷新</button>
+          <button id="diag-reload" type="button" title="重新加载页面">重载</button>
+          <button id="diag-close" class="le-close" type="button" title="关闭">×</button>
+        </div>
+      </div>
+      <div class="diag-body">
+        <section>
+          <h5>渲染 / 显示</h5>
+          <dl id="diag-render"></dl>
+        </section>
+        <section>
+          <h5>场景 / 图层</h5>
+          <dl id="diag-scene"></dl>
+        </section>
+        <section>
+          <h5>地形 / KML</h5>
+          <dl id="diag-terrain"></dl>
+        </section>
+        <section>
+          <h5>最近 scene.renderError</h5>
+          <pre id="diag-render-error" class="diag-error">暂无</pre>
+          <p id="diag-note" class="side-note"></p>
+        </section>
+        <section>
+          <h5>console.error（最近 50 条）</h5>
+          <ol id="diag-console" class="diag-log"><li class="empty">暂无 console.error</li></ol>
+        </section>
+      </div>
+    </div>
+
+    <!-- 高程剖面面板 -->
+    <div id="profile-panel" class="le-panel profile-panel hidden" role="dialog" aria-modal="false" aria-label="高程剖面">
+      <div class="le-panel-head">
+        <h4>高程剖面</h4>
+        <div class="le-panel-actions">
+          <select id="profile-line-select" aria-label="选择剖面线"></select>
+          <button id="profile-refresh" type="button" title="重新采样">刷新</button>
+          <button id="profile-export-png" type="button" title="导出剖面 PNG">导出 PNG</button>
+          <button id="profile-close" class="le-close" type="button" title="关闭">×</button>
+        </div>
+      </div>
+      <canvas id="profile-canvas" width="720" height="260" aria-label="高程剖面图"></canvas>
+      <div id="profile-stats" class="profile-stats"></div>
+      <p id="profile-note" class="side-note"></p>
+    </div>
+
+    <!-- 垂直风廓线 / 3D 高度切片面板（P2） -->
+    <div id="wind-profile-panel" class="le-panel wind-profile-panel hidden" role="dialog" aria-modal="false" aria-label="垂直风廓线">
+      <div class="le-panel-head">
+        <h4>垂直风廓线 <span id="wp-badge" class="le-badge">--</span></h4>
+        <div class="le-panel-actions">
+          <label class="wp-slice-toggle" title="把各高度场景的箭头抬升到 地形+高度 叠加显示">
+            <input id="wp-slices" type="checkbox" /> 3D 高度切片
+          </label>
+          <button id="wp-refresh" type="button" title="重新读取多高度场景">刷新</button>
+          <button id="wp-clear" type="button" title="清除选点">清除</button>
+          <button id="wp-close" class="le-close" type="button" title="关闭">×</button>
+        </div>
+      </div>
+      <canvas id="wp-canvas" width="720" height="260" aria-label="垂直风廓线图"></canvas>
+      <div id="wp-stats" class="wp-stats"></div>
+      <p id="wp-note" class="side-note"></p>
+    </div>
+  </div>
+
+  <footer id="statusbar">
+    <span id="status-text">正在启动本地地球…</span>
+    <span id="camera-text" class="coords" title="相机位置"></span>
+    <span id="coords-text" class="coords" title="点击复制坐标">纬度 --&nbsp;&nbsp;经度 --&nbsp;&nbsp;高度 --</span>
+  </footer>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <div id="loading" class="loading hidden">
+    <div class="spinner"></div>
+    <div id="loading-text">正在加载…</div>
+  </div>
+
+  <div id="drop-overlay" class="drop-overlay hidden">
+    <div class="drop-card">释放以加载 KML / KMZ / GeoJSON / GeoTIFF</div>
+  </div>
+
+  <div id="help-dialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <div class="modal-card">
+      <h2 id="help-title">火风地球 · 使用说明</h2>
+      <ol>
+        <li><b>看地球</b>：左键拖动旋转，滚轮缩放，右键拖动缩放，中键（或 Ctrl+左键）倾斜；右下角视角按钮可左右旋转、上下俯仰、放大缩小、一键复位正北。</li>
+        <li><b>加数据</b>：把 KML/KMZ/GeoJSON/GeoTIFF 拖进来，或点“打开数据”。</li>
+        <li><b>找地方</b>：顶部搜索框输入地名（来自已加载数据和内置地名库）。</li>
+        <li><b>量距离</b>：点“测距/测面积”，在地球上依次点击；右侧面板可查看结果。</li>
+        <li><b>3D 地形</b>：侧栏可开/关地形、开关卫星影像，拖动「地形夸张」滑杆（1.0–3.0×）；快捷键 <b>1</b> 重置、<b>[</b>/<b>]</b> 每次 ±0.1（输入框聚焦时不生效），数值会自动记住（<code>?exag=</code> 优先）。</li>
+        <li><b>实时光照</b>：侧栏「实时光照」开启后拖动时间滑杆（0–24 h，UTC，固定 2024-04-03）即可看到昼夜明暗；「阴影增强」会降低影像透明度以突出本地地形阴影；也可用 <code>?lighting=1&amp;sun=9.5</code>。注意：本地地形 Provider 无顶点法线，Cesium 只做昼夜明暗，没有地形起伏自阴影。</li>
+        <li><b>火场风场计算</b>：侧栏「计算 → 火场风场计算」用手动背景风模式（无需观测数据）：点「取当前视图范围」填南/西/北/东，选 DEM（GeoTIFF），设背景风速/风向/背景高度与模拟时间（ISO 带时区），点「开始计算」后按 DEM 地形算出低空风场并自动载入箭头与粒子。</li>
+        <li><b>绘制与剖面</b>：点/线/面模式在地球上点击绘制，双击结束，<b>Esc</b> 取消，可撤销/清空/导入导出 GeoJSON；画线后点「高程剖面」按 100–300 点采样 <code>LE.heightAt</code> 生成剖面并导出 PNG。</li>
+        <li><b>图层/诊断</b>：图层面板支持搜索、分组、显隐、定位、删除，影像层还可调透明度与上下移；「打开诊断面板」可查看 GPU/WebGL/FPS/内存/地形/KML 与最近错误，并复制/下载诊断 JSON。</li>
+        <li><b>风场粒子 / 风廓线</b>：加载 Wind3D 风场后可在侧栏切换「粒子 / 箭头 / 两者」与粒子密度（低 600、中 1200、高 2200），也可用 <code>?windmode=particles|arrows|both&amp;particles=1200</code>；多高度目录（h050m/h100m/h200m）载入后点「风廓线」，单击地图选点即可查看各高度风速曲线，并可开启「3D 高度切片」叠加抬升箭头。</li>
+        <li><b>地名搜索 / 快照分享</b>：顶部搜索支持中文名、拼音、拼音首字母与 <code>经度,纬度</code>（如 <code>102.4,25.05</code>），最近搜索自动记忆；「HTML 快照」导出内嵌截图的单文件 HTML，「复制分享链接」生成包含视角/地形/影像/风场/性能参数的 URL。</li>
+      </ol>
+      <p class="muted">本仓库只发布软件，不包含地图、地形、影像或风场数据。请使用获授权的本地文件；启用在线影像时，请自行确认服务条款与网络策略。</p>
+      <p class="muted" id="help-version"></p>
+      <button id="help-close" class="btn primary">知道了</button>
+    </div>
+  </div>
+
+  <input id="file-input" type="file" multiple class="hidden-input"
+         accept=".kml,.kmz,.geojson,.json,.tif,.tiff,.gtiff,.rpb,.shp,.dbf,.shx,.prj,.gpkg,.csv,.tsv,.gml,.gpx,.dxf,.wkt,.asc,.fgb" />
+  <input id="folder-input" type="file" webkitdirectory directory multiple class="hidden-input" />
+  <input id="windninja-dir-input" type="file" webkitdirectory directory multiple class="hidden-input" />
+  <input id="project-file-input" type="file" accept=".leproj,.json" class="hidden-input" />
+  <input id="draw-geojson-input" type="file" accept=".geojson,.json" class="hidden-input" />
+  <input id="plugin-file-input" type="file" accept=".json,.leplugin" class="hidden-input" />
+  <input id="xyz-dir-input" type="file" webkitdirectory directory multiple class="hidden-input" />
+
+  <!-- geotiff.js 是 UMD 包（会挂到 globalThis.GeoTIFF），必须用普通 script 标签加载。
+       若用 type="module" + import * as GeoTIFF，命名空间会是空对象，
+       导致 GeoTIFF.fromUrl is not a function。 -->
+  <script src="vendor/geotiff/geotiff.js"></script>
+  <script>window.dispatchEvent(new Event('geotiff-ready'));</script>
+  <!-- 投影引擎（proj4，MIT）→ 解析 .prj / WKT / EPSG，把投影坐标逆投影到 WGS84 -->
+  <script src="vendor/proj4/proj4.js"></script>
+  <!-- SQLite（sql.js，MIT）→ 读 GPKG -->
+  <script src="vendor/sqljs/sql-wasm.js"></script>
+  <!-- RPC（有理多项式系数）→ 国产卫星 L1A 影像（.tiff + .rpb）的定位与贴地 -->
+  <script src="js/rpc.js"></script>
+  <!-- 数据仓库：任意格式栅格的解码/重投影/切片引擎 + 入库管理 -->
+  <script src="js/vault-raster.js"></script>
+  <script src="js/vault.js"></script>
+  <script src="js/vault-ui.js"></script>
+  <script src="js/layers.js"></script>
+  <script src="js/layer-order.js"></script>
+  <script src="js/dem-tiles.js"></script>
+  <script src="js/draping.js"></script>
+  <script src="js/batch-lines.js"></script>
+  <script src="js/terrain-normals.js"></script>
+  <script src="js/terrain-relief.js"></script>
+  <script src="js/terrain.js?v=measure-panel-2"></script>
+  <script src="js/gep-mode.js"></script>
+  <script src="js/raster-ops.js"></script>
+  <script src="js/analysis.js"></script>
+  <script src="js/qgis-toolbox.js"></script>
+  <script src="js/kml-native.js"></script>
+  <!-- 多格式导入：投影引擎 → 格式解析器 → 统一管线 → 属性表 -->
+  <script src="js/projections.js"></script>
+  <script src="js/vector-formats.js"></script>
+  <script src="js/flatgeobuf.js"></script>
+  <script src="js/import-pipeline.js"></script>
+  <script src="js/import-report.js"></script>
+  <script src="js/attribute-table.js"></script>
+  <script src="js/importers.js"></script>
+  <script src="js/measure.js?v=measure-panel-2"></script>
+  <script src="js/tools.js?v=measure-panel-2"></script>
+  <script src="js/perf.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/windninja.js"></script>
+  <script src="js/project.js"></script>
+  <script src="js/exporter.js"></script>
+  <script src="js/lighting.js"></script>
+  <script src="js/layers-panel.js"></script>
+  <script src="js/rule-style.js"></script>
+  <script src="js/layer-style.js"></script>
+  <script src="js/models3d.js"></script>
+  <script src="js/models3d-ui.js"></script>
+  <!-- 3D Tiles 倾斜摄影：内核（纯计算）→ 浏览器外壳 → 界面 -->
+  <script src="js/tiles3d.js"></script>
+  <script src="js/tiles3d-shell.js"></script>
+  <script src="js/tiles3d-ui.js"></script>
+  <!-- 时间轴 / 历史影像：内核（纯计算）→ 浏览器外壳 → 界面 -->
+  <script src="js/timeline.js"></script>
+  <script src="js/timeline-shell.js"></script>
+  <script src="js/timeline-ui.js"></script>
+  <!-- Tour 电影运镜：内核（纯计算）→ 浏览器外壳 → 界面 -->
+  <script src="js/tour.js"></script>
+  <script src="js/tour-shell.js"></script>
+  <script src="js/tour-ui.js"></script>
+  <!-- 拓扑检查与修复：内核（纯计算）→ 浏览器外壳 → 界面 -->
+  <script src="js/topology.js"></script>
+  <script src="js/topology-shell.js"></script>
+  <script src="js/topology-ui.js"></script>
+  <!-- 空间索引与空间查询：内核（纯计算）→ 浏览器外壳 → 界面 -->
+  <script src="js/spatial-index.js"></script>
+  <script src="js/spatial-index-shell.js"></script>
+  <script src="js/spatial-index-ui.js"></script>
+  <!-- 网络分析：内核（纯计算）→ 浏览器外壳 → 界面 -->
+  <script src="js/network.js"></script>
+  <script src="js/network-shell.js"></script>
+  <script src="js/network-ui.js"></script>
+  <script src="js/plugins.js"></script>
+  <script src="js/plugin-shell.js"></script>
+  <script src="js/plugin-ui.js"></script>
+  <!-- 矢量格式写出：内核（纯计算）→ 浏览器外壳 → 界面 -->
+  <script src="js/vector-write.js"></script>
+  <script src="js/vector-write-shell.js"></script>
+  <script src="js/vector-write-ui.js"></script>
+  <!-- 栅格分类：内核（纯计算）→ 浏览器外壳 → 界面 -->
+  <script src="js/raster-classify.js"></script>
+  <script src="js/raster-classify-shell.js"></script>
+  <script src="js/raster-classify-ui.js"></script>
+  <!-- NetCDF 气象栅格叠加：内核（纯计算）→ 浏览器外壳 → 界面 -->
+  <script src="js/netcdf.js"></script>
+  <script src="js/netcdf-render.js"></script>
+  <script src="js/netcdf-shell.js"></script>
+  <script src="js/netcdf-ui.js"></script>
+  <script src="js/diagnostics.js"></script>
+  <script src="js/draw.js"></script>
+  <script src="js/markers.js"></script>
+  <script src="js/profile.js"></script>
+  <script src="js/places.js"></script>
+  <script src="js/wind-particles.js"></script>
+  <script src="js/wind-profile.js"></script>
+  <script src="js/snapshot.js"></script>
+  <script src="js/mvt.js"></script>
+  <script src="js/mbtiles.js"></script>
+  <script src="js/local-imagery.js"></script>
+  <script src="js/wind3d-compute.js"></script>
+  <script src="js/ui-theme.js"></script>
+  <script src="js/ui-font.js"></script>
+  <script src="js/sidebar-nav.js"></script>
+  <script src="js/net-status.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

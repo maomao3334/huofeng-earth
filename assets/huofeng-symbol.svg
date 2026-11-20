@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="HuofengEarth">
+  <circle cx="32" cy="32" r="30" fill="#152329"/>
+  <circle cx="32" cy="32" r="21" fill="none" stroke="#6fd6b4" stroke-width="3"/>
+  <path d="M12 33h40M32 12c8 7 12 14 12 20s-4 13-12 20c-8-7-12-14-12-20s4-13 12-20Z" fill="none" stroke="#4c9be8" stroke-width="2"/>
+  <path d="M18 46c8-5 19-5 28 0" fill="none" stroke="#e4ad62" stroke-width="3" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,40 @@
+name: quality
+
+permissions:
+  contents: read
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  source-check:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Check JavaScript syntax
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem js -Recurse -File -Filter *.js
+          foreach ($file in $files) {
+            node --check $file.FullName
+            if ($LASTEXITCODE -ne 0) { throw "Syntax check failed: $($file.FullName)" }
+          }
+      - name: Check PowerShell syntax
+        shell: pwsh
+        run: |
+          $files = @('serve.ps1', 'tools/build-launcher.ps1', 'tools/pick-dem.ps1', 'tools/pick-file.ps1', 'tools/pick-files.ps1', 'tools/pick-folder.ps1')
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD $file), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count) { throw "PowerShell syntax check failed: $file" }
+          }
+      - name: Build launchers
+        shell: pwsh
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-launcher.ps1
+      - name: Check repository data boundary
+        shell: pwsh
+        run: |
+          python tools/check-public-tree.py

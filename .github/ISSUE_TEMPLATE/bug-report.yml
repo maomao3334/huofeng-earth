@@ -1,0 +1,36 @@
+name: Bug report
+description: Report a reproducible software issue without attaching operational data
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not attach terrain or imagery sources, observations, job results, credentials, logs with local paths, or screenshots with sensitive coordinates. Use a synthetic or fully redacted example.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: 0.9.1-rc.1
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Include only the minimum synthetic or redacted steps needed to reproduce the issue.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Data check
+      options:
+        - label: I have removed private data, real observations, credentials, and sensitive locations.
+          required: true

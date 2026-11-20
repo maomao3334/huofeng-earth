@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="title desc">
+  <title id="title">火风地球 HuofengEarth</title>
+  <desc id="desc">Offline-first terrain and geospatial workspace</desc>
+  <rect width="1200" height="300" fill="#152329"/>
+  <path d="M0 252c92-38 141-43 222-7s147 32 227-8 113-75 197-52 133 67 220 47 124-87 218-69 128 48 216 16" fill="none" stroke="#2c5960" stroke-width="2"/>
+  <path d="M0 272c89-37 145-46 222-13s143 30 224-8 117-70 196-48 134 64 222 43 127-84 218-65 130 45 218 12" fill="none" stroke="#367078" stroke-width="2"/>
+  <path d="M560 301c50-46 104-68 170-47s103 62 181 48 125-65 198-68 96 15 145 1" fill="none" stroke="#477f79" stroke-width="2"/>
+  <path d="M684 300c41-35 86-51 135-36s83 48 140 38 92-47 146-50 82 11 124-2" fill="none" stroke="#568b79" stroke-width="2"/>
+  <path d="M802 300c30-24 61-34 96-23s59 34 99 27 65-31 102-34 57 8 86-2" fill="none" stroke="#c4aa68" stroke-width="2"/>
+  <path d="M926 300c20-15 41-21 63-14s39 22 65 17 42-19 67-22 38 5 57-2" fill="none" stroke="#dfa85f" stroke-width="2"/>
+  <rect x="64" y="54" width="196" height="28" rx="14" fill="#243b40"/>
+  <circle cx="82" cy="68" r="4" fill="#e8b361"/>
+  <text x="96" y="73" fill="#b4c7c1" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="13" letter-spacing="1.5">OFFLINE-FIRST GIS</text>
+  <text x="62" y="154" fill="#f4f1e7" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="54" font-weight="650">火风地球</text>
+  <text x="66" y="193" fill="#9fb9b4" font-family="Segoe UI, sans-serif" font-size="23" font-weight="500">HuofengEarth</text>
+  <path d="M66 222h40" stroke="#e4ad62" stroke-width="3"/>
+  <text x="120" y="228" fill="#d0d8d1" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="17">三维地形 · 风场研判 · 本地空间分析</text>
+</svg>

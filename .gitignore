@@ -1,0 +1,55 @@
+# Runtime and local data
+/data/**
+!/data/README.md
+jobs/
+out/
+release/
+tmp/
+node_modules/
+.gzcache/
+.brcache/
+
+# Private runtime state
+*.log
+*.pid
+*.state
+*.state.tok
+*.local
+
+# Generated or distributable binaries
+*.exe
+*.dll
+*.zip
+*.7z
+*.rar
+*.kmz
+*.bin
+*.hgt
+*.hgt.gz
+*.asc
+*.prj
+*.nc
+*.tif
+*.tiff
+*.mbtiles
+
+# Browser and diagnostic artifacts
+docs/testdata/
+docs/screenshots/
+/vendor/cesium/Assets/Textures/NaturalEarthII/
+/vendor/cesium/Widgets/Images/ImageryProviders/naturalEarthII.png
+/assets/cfri-emblem-color.png
+/assets/cfri-emblem-gold.png
+/assets/cfri-emblem.ico
+/assets/fire-emblem.ico
+/assets/fire-emblem.jpg
+/assets/fire-rescue-flag.jpg
+rpc-*.png
+serve-errors.log
+
+# Python and editor noise
+__pycache__/
+*.py[cod]
+.venv/
+.idea/
+.vscode/
